@@ -1,58 +1,40 @@
-package com.example.simulator.domain;
+package com.example.simulator.domain
 
-import android.os.Parcel;
-import android.os.Parcelable;
+import android.os.Parcel
+import android.os.Parcelable
+import com.google.gson.annotations.SerializedName
+import android.os.Parcelable.Creator
+import com.example.simulator.domain.Place
 
-import com.google.gson.annotations.SerializedName;
-
-public class Place implements Parcelable {
-
+class Place protected constructor(`in`: Parcel) : Parcelable {
     @SerializedName("nome")
-    private String name;
+    var name: String?
+
     @SerializedName("imagem")
-    private String image;
-
-    protected Place(Parcel in) {
-        name = in.readString();
-        image = in.readString();
+    var image: String?
+    override fun writeToParcel(dest: Parcel, flags: Int) {
+        dest.writeString(name)
+        dest.writeString(image)
     }
 
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(name);
-        dest.writeString(image);
+    override fun describeContents(): Int {
+        return 0
     }
 
-    @Override
-    public int describeContents() {
-        return 0;
-    }
+    companion object {
+        val CREATOR: Creator<Place> = object : Creator<Place?> {
+            override fun createFromParcel(`in`: Parcel): Place? {
+                return Place(`in`)
+            }
 
-    public static final Creator<Place> CREATOR = new Creator<Place>() {
-        @Override
-        public Place createFromParcel(Parcel in) {
-            return new Place(in);
+            override fun newArray(size: Int): Array<Place?> {
+                return arrayOfNulls(size)
+            }
         }
-
-        @Override
-        public Place[] newArray(int size) {
-            return new Place[size];
-        }
-    };
-
-    public String getName() {
-        return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getImage() {
-        return image;
-    }
-
-    public void setImage(String image) {
-        this.image = image;
+    init {
+        name = `in`.readString()
+        image = `in`.readString()
     }
 }

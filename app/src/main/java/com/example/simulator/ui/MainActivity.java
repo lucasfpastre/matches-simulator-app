@@ -1,107 +1,100 @@
-package com.example.simulator.ui;
+package com.example.simulator.ui
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.os.Bundle;
+import android.animation.Animator
+import com.example.simulator.domain.Match.homeTeam
+import com.example.simulator.domain.Team.score
+import com.example.simulator.domain.Team.stars
+import com.example.simulator.domain.Match.awayTeam
+import androidx.appcompat.app.AppCompatActivity
+import com.example.simulator.data.MatchesApi
+import com.example.simulator.ui.adapter.MatchesAdapter
+import android.os.Bundle
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout.OnRefreshListener
+import android.animation.AnimatorListenerAdapter
+import android.view.View
+import com.google.android.material.snackbar.Snackbar
+import com.example.simulator.R
+import com.example.simulator.databinding.ActivityMainBinding
+import com.example.simulator.domain.Match
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import java.util.*
 
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-
-import com.example.simulator.R;
-import com.example.simulator.data.MatchesApi;
-import com.example.simulator.databinding.ActivityMainBinding;
-import com.example.simulator.domain.Match;
-import com.example.simulator.ui.adapter.MatchesAdapter;
-import com.google.android.material.snackbar.Snackbar;
-
-import java.util.List;
-import java.util.Random;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
-
-public class MainActivity extends AppCompatActivity {
-
-    private ActivityMainBinding binding;
-    private MatchesApi matchesApi;
-    private MatchesAdapter matchesAdapter;
-
-    @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        binding = ActivityMainBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
-
-        setupHttpClint();
-        setupMatchesList();
-        setupMatchesRefresh();
-        setupFloatingActionButton();
+class MainActivity : AppCompatActivity() {
+    private var binding: ActivityMainBinding? = null
+    private var matchesApi: MatchesApi? = null
+    private var matchesAdapter: MatchesAdapter? = null
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding!!.root)
+        setupHttpClint()
+        setupMatchesList()
+        setupMatchesRefresh()
+        setupFloatingActionButton()
     }
 
-    private void setupHttpClint() {
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("https://lucasfpastre.github.io/matches-simulator-api/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-        matchesApi = retrofit.create(MatchesApi.class);
+    private fun setupHttpClint() {
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://lucasfpastre.github.io/matches-simulator-api/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        matchesApi = retrofit.create(MatchesApi::class.java)
     }
 
-    private void setupMatchesList() {
-        binding.rvMatches.setHasFixedSize(true);
-        binding.rvMatches.setLayoutManager(new LinearLayoutManager(this));
-        findMatchesFromApi();
+    private fun setupMatchesList() {
+        binding!!.rvMatches.setHasFixedSize(true)
+        binding!!.rvMatches.layoutManager = LinearLayoutManager(this)
+        findMatchesFromApi()
     }
 
-    private void setupMatchesRefresh() {
-        binding.srlMatches.setOnRefreshListener(this::findMatchesFromApi);
+    private fun setupMatchesRefresh() {
+        binding!!.srlMatches.setOnRefreshListener { findMatchesFromApi() }
     }
 
-    private void setupFloatingActionButton() {
-        binding.fabSimulate.setOnClickListener(view -> {
-            view.animate().rotationBy(360).setDuration(500).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    Random random = new Random();
-                    for (int i = 0; i < matchesAdapter.getItemCount(); i++) {
-                        Match match = matchesAdapter.getMatches().get(i);
-                        match.getHomeTeam().setScore(random.nextInt(match.getHomeTeam().getStars() + 1));
-                        match.getAwayTeam().setScore(random.nextInt(match.getAwayTeam().getStars() + 1));
-                        matchesAdapter.notifyItemChanged(i);
+    private fun setupFloatingActionButton() {
+        binding!!.fabSimulate.setOnClickListener { view: View ->
+            view.animate().rotationBy(360f).setDuration(500)
+                .setListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        val random = Random()
+                        for (i in 0 until matchesAdapter!!.itemCount) {
+                            val (_, _, homeTeam, awayTeam) = matchesAdapter!!.matches[i]
+                            homeTeam.score = random.nextInt(homeTeam.stars + 1)
+                            awayTeam.score = random.nextInt(awayTeam.stars + 1)
+                            matchesAdapter!!.notifyItemChanged(i)
+                        }
                     }
-                }
-            });
-        });
+                })
+        }
     }
 
-    private void showErrorMessage() {
-        Snackbar.make(binding.fabSimulate, R.string.error_api, Snackbar.LENGTH_LONG).show();
+    private fun showErrorMessage() {
+        Snackbar.make(binding!!.fabSimulate, R.string.error_api, Snackbar.LENGTH_LONG).show()
     }
 
-    private void findMatchesFromApi() {
-        binding.srlMatches.setRefreshing(true);
-        matchesApi.getMatches().enqueue(new Callback<List<Match>>() {
-            @Override
-            public void onResponse(Call<List<Match>> call, Response<List<Match>> response) {
-                if (response.isSuccessful()) {
-                    List<Match> matches = response.body();
-                    matchesAdapter = new MatchesAdapter(matches);
-                    binding.rvMatches.setAdapter(matchesAdapter);
+    private fun findMatchesFromApi() {
+        binding!!.srlMatches.isRefreshing = true
+        matchesApi!!.matches.enqueue(object : Callback<List<Match?>?> {
+            override fun onResponse(call: Call<List<Match?>?>, response: Response<List<Match?>?>) {
+                if (response.isSuccessful) {
+                    val matches = response.body()
+                    matchesAdapter = MatchesAdapter(matches)
+                    binding!!.rvMatches.adapter = matchesAdapter
                 } else {
-                    showErrorMessage();
+                    showErrorMessage()
                 }
-                binding.srlMatches.setRefreshing(false);
+                binding!!.srlMatches.isRefreshing = false
             }
 
-            @Override
-            public void onFailure(Call<List<Match>> call, Throwable t) {
-                showErrorMessage();
-                binding.srlMatches.setRefreshing(false);
+            override fun onFailure(call: Call<List<Match?>?>, t: Throwable) {
+                showErrorMessage()
+                binding!!.srlMatches.isRefreshing = false
             }
-        });
+        })
     }
 }
