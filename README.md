@@ -10,3 +10,5 @@ Este repositório foi organizado em branches que representam a evolução do est
     - [release/componentes-layouts-ui-ux-em-apps-android](https://github.com/lucasfpastre/matches-simulator-app/tree/release/desenvolvimento-mobile-nativo-android)
 3. Java e Kotlin Juntos!? Construindo Apps Android
     - [release/java-e-kotlin-juntos-construindo-apps-android](https://github.com/lucasfpastre/matches-simulator-app/tree/release/java-e-kotlin-juntos-construindo-apps-android)
+4. Explorando o Firebase Para Apps Android Resilientes
+    - [release/explorando-o-firebase-para-apps-android-resilientes](https://github.com/lucasfpastre/matches-simulator-app/tree/release/explorando-o-firebase-para-apps-android-resilientes)
